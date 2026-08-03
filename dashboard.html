@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Ollama</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .header h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .card h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .stat-label {
+      color: #666;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .model-item {
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      margin-bottom: 10px;
+    }
+
+    .model-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .model-size {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 12px;
+      margin-top: 0;
+    }
+
+    .status-online {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .status-offline {
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    .chart {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .chart-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .chart-label {
+      width: 100px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .chart-value {
+      flex: 1;
+      height: 30px;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      color: white;
+      font-weight: 600;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <h1>📊 Dashboard Ollama</h1>
+      <p>Gerenciador completo de IA local</p>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid">
+      <!-- STATUS -->
+      <div class="card">
+        <h2>🔌 Status</h2>
+        <div class="card-content">
+          <div class="stat">
+            <span class="stat-label">Ollama:</span>
+            <span class="stat-value status-online" id="statusOllama">Conectado</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Modelo Ativo:</span>
+            <span class="stat-value" id="activeModel">Llama 2</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Porta:</span>
+            <span class="stat-value">11434</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTATÍSTICAS -->
+      <div class="card">
+        <h2>📈 Estatísticas</h2>
+        <div class="card-content">
+          <div class="stat">
+            <span class="stat-label">Mensagens:</span>
+            <span class="stat-value" id="messageCount">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Tempo Médio:</span>
+            <span class="stat-value" id="avgTime">0ms</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Modelos:</span>
+            <span class="stat-value" id="modelCount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AÇÕES RÁPIDAS -->
+      <div class="card">
+        <h2>⚡ Ações Rápidas</h2>
+        <div class="card-content">
+          <button class="btn btn-small" onclick="goToChat()">💬 Ir para Chat</button>
+          <button class="btn btn-small" onclick="refreshDashboard()">🔄 Atualizar</button>
+          <button class="btn btn-small" onclick="downloadStats()">📥 Baixar Stats</button>
+        </div>
+      </div>
+
+      <!-- MODELOS -->
+      <div class="card full-width">
+        <h2>🤖 Modelos Instalados</h2>
+        <div class="card-content" id="modelsList">
+          <p>Carregando modelos...</p>
+        </div>
+      </div>
+
+      <!-- GRÁFICO -->
+      <div class="card full-width">
+        <h2>📊 Uso de Recursos</h2>
+        <div class="chart">
+          <div class="chart-bar">
+            <div class="chart-label">CPU:</div>
+            <div class="chart-value" style="width: 65%">65%</div>
+          </div>
+          <div class="chart-bar">
+            <div class="chart-label">RAM:</div>
+            <div class="chart-value" style="width: 45%">45%</div>
+          </div>
+          <div class="chart-bar">
+            <div class="chart-label">Disco:</div>
+            <div class="chart-value" style="width: 30%">30%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadDashboard() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const modelsList = document.getElementById('modelsList');
+                    modelsList.innerHTML = data.models
+                        .map(model => `
+                            <div class="model-item">
+                                <div class="model-name">🤖 ${model}</div>
+                                <div class="model-size">Modelo disponível</div>
+                            </div>
+                        `)
+                        .join('');
+                    
+                    document.getElementById('modelCount').textContent = data.models.length;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar modelos:', error);
+            }
+        }
+
+        function goToChat() {
+            window.location.href = '/';
+        }
+
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        function downloadStats() {
+            const stats = {
+                timestamp: new Date().toISOString(),
+                status: document.getElementById('statusOllama').textContent,
+                activeModel: document.getElementById('activeModel').textContent,
+                messageCount: document.getElementById('messageCount').textContent,
+            };
+            
+            const blob = new Blob([JSON.stringify(stats, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dashboard_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+        }
+
+        window.addEventListener('load', loadDashboard);
+  </script>
+</body>
+
+</html>
