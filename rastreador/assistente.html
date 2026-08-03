@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Assistente Jurídico — Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #0a0a0f; 
+      color: #e2e8f0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #a3a082;
+      margin-bottom: 10px;
+    }
+    
+    .painel {
+      background: #12121a;
+      border: 1px solid #2d2d3a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .botoes {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      padding: 10px 15px;
+      border: 1px solid #a3a082;
+      background: #1a1a2e;
+      color: #a3a082;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background: #a3a082;
+      color: #000;
+    }
+    
+    textarea {
+      width: 100%;
+      height: 400px;
+      padding: 15px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border: 1px solid #2d2d3a;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    
+    .lista {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2d2d3a;
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .card:hover {
+      border-color: #a3a082;
+      background: #252535;
+    }
+    
+    .card.ativo {
+      border-color: #a3a082;
+      background: #2d2d3a;
+    }
+    
+    .card-titulo {
+      font-weight: bold;
+      color: #a3a082;
+      margin-bottom: 5px;
+    }
+    
+    .card-meta {
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>⚖️ Assistente Jurídico — Offline (Sem Neon, Sem Cobrança)</h1>
+  <p style="color: #888; margin-bottom: 20px;">Funciona 100% local • Sem internet • Sem servidor • Sem fraude</p>
+  
+  <!-- PAINEL DE CONTROLE -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">📂 Documentos</h2>
+    
+    <div class="botoes">
+      <button onclick="novoDocumento()">📄 Novo Documento</button>
+      <button onclick="salvarDocumento()">💾 Salvar</button>
+      <button onclick="baixarDocumento()">⬇ Baixar</button>
+      <button onclick="deletarDocumento()">🗑 Deletar</button>
+    </div>
+    
+    <div class="lista" id="listaDocumentos"></div>
+  </div>
+  
+  <!-- EDITOR -->
+  <div class="painel">
+    <h2 id="tituloEditor" style="color: #a3a082; margin-bottom: 15px;">Novo Documento</h2>
+    <textarea id="editor" placeholder="Digite seu documento aqui..."></textarea>
+  </div>
+</div>
+
+<script>
+  // DADOS LOCAIS (SEM NEON, SEM SERVIDOR)
+  let documentos = JSON.parse(localStorage.getItem('docs_juridicos')) || [];
+  let documentoAtual = null;
+  
+  // NOVO DOCUMENTO
+  function novoDocumento() {
+    documentoAtual = {
+      id: Date.now(),
+      titulo: 'Novo Documento',
+      conteudo: '',
+      data: new Date().toLocaleDateString('pt-BR'),
+      tipo: 'Parecer'
+    };
+    document.getElementById('editor').value = '';
+    document.getElementById('tituloEditor').textContent = 'Novo Documento';
+    renderizarLista();
+  }
+  
+  // SALVAR DOCUMENTO
+  function salvarDocumento() {
+    if (!documentoAtual) {
+      alert('Crie um novo documento primeiro!');
+      return;
+    }
+    
+    documentoAtual.conteudo = document.getElementById('editor').value;
+    documentoAtual.data = new Date().toLocaleDateString('pt-BR');
+    
+    const idx = documentos.findIndex(d => d.id === documentoAtual.id);
+    if (idx >= 0) {
+      documentos[idx] = documentoAtual;
+    } else {
+      documentos.push(documentoAtual);
+    }
+    
+    localStorage.setItem('docs_juridicos', JSON.stringify(documentos));
+    alert('✅ Documento salvo com sucesso!');
+    renderizarLista();
+  }
+  
+  // BAIXAR DOCUMENTO
+  function baixarDocumento() {
+    if (!documentoAtual) return;
+    
+    const conteudo = document.getElementById('editor').value;
+    const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (documentoAtual.titulo || 'documento') + '.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  
+  // DELETAR DOCUMENTO
+  function deletarDocumento() {
+    if (!documentoAtual) return;
+    if (!confirm('Deletar este documento?')) return;
+    
+    documentos = documentos.filter(d => d.id !== documentoAtual.id);
+    localStorage.setItem('docs_juridicos', JSON.stringify(documentos));
+    documentoAtual = null;
+    document.getElementById('editor').value = '';
+    renderizarLista();
+  }
+  
+  // RENDERIZAR LISTA
+  function renderizarLista() {
+    const lista = document.getElementById('listaDocumentos');
+    lista.innerHTML = '';
+    
+    if (documentos.length === 0) {
+      lista.innerHTML = '<p style="color: #888; grid-column: 1/-1;">Nenhum documento. Clique em "Novo Documento"</p>';
+      return;
+    }
+    
+    documentos.forEach(doc => {
+      const card = document.createElement('div');
+      card.className = 'card' + (documentoAtual?.id === doc.id ? ' ativo' : '');
+      card.innerHTML = `
+        <div class="card-titulo">${doc.titulo}</div>
+        <div class="card-meta">${doc.data}</div>
+        <div class="card-meta">${doc.tipo}</div>
+      `;
+      card.onclick = () => abrirDocumento(doc.id);
+      lista.appendChild(card);
+    });
+  }
+  
+  // ABRIR DOCUMENTO
+  function abrirDocumento(id) {
+    documentoAtual = documentos.find(d => d.id === id);
+    if (documentoAtual) {
+      document.getElementById('editor').value = documentoAtual.conteudo;
+      document.getElementById('tituloEditor').textContent = documentoAtual.titulo;
+      renderizarLista();
+    }
+  }
+  
+  // INICIALIZAR
+  renderizarLista();
+</script>
+
+</body>
+</html>
