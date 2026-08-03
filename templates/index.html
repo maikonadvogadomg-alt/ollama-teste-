@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Avançado com Ollama</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      padding: 20px;
+    }
+
+    .main-container {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-section h3 {
+      color: #667eea;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 10px;
+    }
+
+    .status-box {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .status-box.connected {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+
+    .status-box.disconnected {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .model-select {
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    .model-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn-small {
+      padding: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+
+    .btn-small:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-small:active {
+      transform: translateY(0);
+    }
+
+    .chat-container {
+      flex: 1;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-header h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .chat-header p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+
+    .message {
+      margin-bottom: 15px;
+      display: flex;
+      animation: slideIn 0.3s ease-in-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.bot {
+      justify-content: flex-start;
+    }
+
+    .message-content {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+
+    .message.user .message-content {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+
+    .message.bot .message-content {
+      background: #e5e7eb;
+      color: #333;
+      border-bottom-left-radius: 0;
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    .loading {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .loading span {
+      width: 8px;
+      height: 8px;
+      background: #667eea;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+
+    .loading span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .loading span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+        opacity: 0.5;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .input-area {
+      padding: 20px;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 25px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .input-area input:focus {
+      border-color: #667eea;
+    }
+
+    .input-area button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+
+    .input-area button:hover {
+      transform: translateY(-2px);
+    }
+
+    .input-area button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+      }
+
+      .message-content {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- Status -->
+      <div class="sidebar-section">
+        <h3>Status</h3>
+        <div class="status-box disconnected" id="statusBox">
+          🔄 Verificando...
+        </div>
+      </div>
+
+      <!-- Modelo -->
+      <div class="sidebar-section">
+        <h3>Modelo</h3>
+        <select class="model-select" id="modelSelect">
+                    <option value="llama2">Llama 2</option>
+                    <option value="neural-chat">Neural Chat</option>
+                    <option value="mistral">Mistral</option>
+                </select>
+      </div>
+
+      <!-- Ações -->
+      <div class="sidebar-section">
+        <h3>Ações</h3>
+        <button class="btn-small" onclick="clearHistory()">🗑️ Limpar Chat</button>
+        <button class="btn-small" onclick="refreshStatus()">🔄 Atualizar</button>
+        <button class="btn-small" onclick="downloadHistory()">💾 Baixar</button>
+      </div>
+
+      <!-- Informações -->
+      <div class="sidebar-section">
+        <h3>Informações</h3>
+        <div style="font-size: 12px; color: #666; line-height: 1.6;">
+          <p>🤖 <strong>IA Local</strong></p>
+          <p>Rodando com Ollama</p>
+          <p>Sem internet necessário</p>
+          <p>Privado e seguro</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat-container">
+      <div class="chat-header">
+        <h1>💬 Chat com IA Local</h1>
+        <p id="headerStatus">Conectando...</p>
+      </div>
+
+      <div class="chat-area" id="chatArea">
+        <div class="message bot">
+          <div>
+            <div class="message-content">
+              👋 Olá! Sou uma IA rodando localmente com Ollama. Como posso ajudar?
+            </div>
+            <div class="message-time" id="time0"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <input
+                    type="text"
+                    id="userInput"
+                    placeholder="Digite sua pergunta..."
+                    autocomplete="off"
+                >
+        <button id="sendBtn" onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusBox = document.getElementById('statusBox');
+        const headerStatus = document.getElementById('headerStatus');
+        const modelSelect = document.getElementById('modelSelect');
+
+        let isConnected = false;
+        let isWaiting = false;
+        let messageCount = 0;
+
+        // Verificar conexão
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                isConnected = data.connected;
+                
+                if (isConnected) {
+                    statusBox.className = 'status-box connected';
+                    statusBox.textContent = '✅ Conectado';
+                    headerStatus.textContent = `🤖 ${data.model}`;
+                } else {
+                    statusBox.className = 'status-box disconnected';
+                    statusBox.textContent = '❌ Desconectado';
+                    headerStatus.textContent = 'Ollama não está conectado';
+                }
+            } catch (error) {
+                isConnected = false;
+                statusBox.className = 'status-box disconnected';
+                statusBox.textContent = '❌ Erro';
+                headerStatus.textContent = 'Erro ao conectar';
+            }
+        }
+
+        // Enviar mensagem
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            
+            if (!message) return;
+            if (isWaiting) return;
+            if (!isConnected) {
+                addMessage('Erro: Ollama não está conectado!', 'bot');
+                return;
+            }
+
+            addMessage(message, 'user');
+            userInput.value = '';
+            sendBtn.disabled = true;
+            isWaiting = true;
+
+            const loadingId = 'loading-' + Date.now();
+            addMessage('<div class="loading"><span></span><span></span><span></span></div>', 'bot', loadingId);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage('Erro: ' + data.error, 'bot');
+                }
+
+            } catch (error) {
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                addMessage('Erro ao conectar com servidor', 'bot');
+            } finally {
+                sendBtn.disabled = false;
+                isWaiting = false;
+                userInput.focus();
+            }
+        }
+
+        // Adicionar mensagem
+        function addMessage(text, sender, id = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            if (id) messageDiv.id = id;
+
+            const contentWrapper = document.createElement('div');
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = text;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            contentWrapper.appendChild(contentDiv);
+            contentWrapper.appendChild(timeDiv);
+            messageDiv.appendChild(contentWrapper);
+            chatArea.appendChild(messageDiv);
+
+            chatArea.scrollTop = chatArea.scrollHeight;
+            messageCount++;
+        }
+
+        // Limpar histórico
+        async function clearHistory() {
+            if (confirm('Tem certeza que quer limpar o chat?')) {
+                await fetch('/api/clear', { method: 'POST' });
+                chatArea.innerHTML = '';
+                messageCount = 0;
+                addMessage('Chat limpo!', 'bot');
+            }
+        }
+
+        // Atualizar status
+        function refreshStatus() {
+            checkStatus();
+        }
+
+        // Baixar histórico
+        async function downloadHistory() {
+            const response = await fetch('/api/history');
+            const data = await response.json();
+            
+            const text = data.history
+                .map(msg => `${msg.role}: ${msg.content}`)
+                .join('\n\n');
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chat_${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+        }
+
+        // Mudar modelo
+        modelSelect.addEventListener('change', async (e) => {
+            const newModel = e.target.value;
+            try {
+                const response = await fetch('/api/change-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ model: newModel })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    addMessage(`✅ Modelo alterado para ${newModel}`, 'bot');
+                }
+            } catch (error) {
+                addMessage('Erro ao alterar modelo', 'bot');
+                modelSelect.value = 'llama2';
+            }
+        });
+
+        // Enviar ao pressionar Enter
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !isWaiting) {
+                sendMessage();
+            }
+        });
+
+        // Inicializar
+        window.addEventListener('load', () => {
+            checkStatus();
+            userInput.focus();
+        });
+
+        // Verificar status a cada 5 segundos
+        setInterval(checkStatus, 5000);
+  </script>
+</body>
+
+</html>
