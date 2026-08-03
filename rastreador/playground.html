@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Playground Jurídico — Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4f8; }
+    
+    .container { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 20px; }
+    
+    .painel-esquerdo {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .editor {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .botoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+    button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .btn-azul { background: #2563eb; color: white; }
+    .btn-verde { background: #15803d; color: white; }
+    .btn-vermelho { background: #dc2626; color: white; }
+    button:hover { opacity: 0.85; }
+    
+    textarea {
+      width: 100%;
+      height: 500px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      resize: vertical;
+    }
+    
+    .preview {
+      background: white;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      max-height: 600px;
+      overflow-y: auto;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- PAINEL ESQUERDO -->
+  <div class="painel-esquerdo">
+    <h2>📂 Documentos</h2>
+    
+    <div class="botoes">
+      <button class="btn-azul" onclick="importarWord()">📥 Importar Word</button>
+      <button class="btn-verde" onclick="novoDocumento()">📄 Novo</button>
+    </div>
+    
+    <div id="listaDocumentos" style="margin-top: 20px;"></div>
+  </div>
+  
+  <!-- EDITOR -->
+  <div class="editor">
+    <h2 id="titulo">Novo Documento</h2>
+    
+    <div class="botoes">
+      <button class="btn-azul" onclick="salvar()">💾 Salvar</button>
+      <button class="btn-verde" onclick="baixarWord()">⬇ Baixar Word</button>
+      <button class="btn-verde" onclick="baixarPDF()">⬇ Baixar PDF</button>
+      <button class="btn-vermelho" onclick="deletar()">🗑 Deletar</button>
+    </div>
+    
+    <textarea id="editor" placeholder="Digite ou cole seu documento aqui..."></textarea>
+    
+    <div class="preview" id="preview"></div>
+  </div>
+
+</div>
+
+<script>
+  let documentoAtual = null;
+  let documentos = JSON.parse(localStorage.getItem('documentos')) || [];
+  
+  // NOVO DOCUMENTO
+  function novoDocumento() {
+    documentoAtual = {
+      id: Date.now(),
+      titulo: 'Novo Documento',
+      conteudo: '',
+      data: new Date().toLocaleDateString('pt-BR')
+    };
+    document.getElementById('editor').value = '';
+    document.getElementById('titulo').textContent = 'Novo Documento';
+    renderizarLista();
+  }
+  
+  // SALVAR
+  function salvar() {
+    if (!documentoAtual) {
+      alert('Crie um novo documento primeiro!');
+      return;
+    }
+    
+    documentoAtual.conteudo = document.getElementById('editor').value;
+    documentoAtual.data = new Date().toLocaleDateString('pt-BR');
+    
+    const idx = documentos.findIndex(d => d.id === documentoAtual.id);
+    if (idx >= 0) {
+      documentos[idx] = documentoAtual;
+    } else {
+      documentos.push(documentoAtual);
+    }
+    
+    localStorage.setItem('documentos', JSON.stringify(documentos));
+    alert('✅ Documento salvo com sucesso!');
+    renderizarLista();
+  }
+  
+  // RENDERIZAR LISTA
+  function renderizarLista() {
+    const lista = document.getElementById('listaDocumentos');
+    lista.innerHTML = '';
+    
+    documentos.forEach(doc => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; background: ' + (documentoAtual?.id === doc.id ? '#eff6ff' : '#fff');
+      card.innerHTML = `
+        <div style="font-weight: bold; color: #1e3a5f;">${doc.titulo}</div>
+        <div style="font-size: 12px; color: #888;">${doc.data}</div>
+      `;
+      card.onclick = () => abrirDocumento(doc.id);
+      lista.appendChild(card);
+    });
+  }
+  
+  // ABRIR DOCUMENTO
+  function abrirDocumento(id) {
+    documentoAtual = documentos.find(d => d.id === id);
+    if (documentoAtual) {
+      document.getElementById('editor').value = documentoAtual.conteudo;
+      document.getElementById('titulo').textContent = documentoAtual.titulo;
+      renderizarLista();
+    }
+  }
+  
+  // IMPORTAR WORD (simplificado)
+  function importarWord() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.docx,.doc,.txt,.pdf';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          documentoAtual = {
+            id: Date.now(),
+            titulo: file.name,
+            conteudo: evt.target.result,
+            data: new Date().toLocaleDateString('pt-BR')
+          };
+          document.getElementById('editor').value = documentoAtual.conteudo;
+          document.getElementById('titulo').textContent = documentoAtual.titulo;
+          renderizarLista();
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  }
+  
+  // BAIXAR WORD (simplificado)
+  function baixarWord() {
+    if (!documentoAtual) return;
+    const conteudo = document.getElementById('editor').value;
+    const blob = new Blob([conteudo], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (documentoAtual.titulo || 'documento') + '.doc';
+    a.click();
+  }
+  
+  // BAIXAR PDF
+  function baixarPDF() {
+    alert('PDF requer biblioteca externa. Use "Imprimir como PDF" do navegador.');
+  }
+  
+  // DELETAR
+  function deletar() {
+    if (!documentoAtual) return;
+    if (!confirm('Deletar este documento?')) return;
+    documentos = documentos.filter(d => d.id !== documentoAtual.id);
+    localStorage.setItem('documentos', JSON.stringify(documentos));
+    documentoAtual = null;
+    document.getElementById('editor').value = '';
+    renderizarLista();
+  }
+  
+  // INICIALIZAR
+  renderizarLista();
+</script>
+
+</body>
+</html>
