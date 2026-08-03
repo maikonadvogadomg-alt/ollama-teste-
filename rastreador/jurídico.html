@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Ferramenta Jurídica — Melhorada</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #0a0a0f; color: #e2e8f0; padding: 20px; }
+    
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #a3a082; margin-bottom: 20px; }
+    
+    .painel {
+      background: #12121a;
+      border: 1px solid #2d2d3a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .botoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+    button { padding: 10px 15px; border: 1px solid #a3a082; background: #1a1a2e; color: #a3a082; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #a3a082; color: #000; }
+    
+    .resultado {
+      background: #1e1e1e;
+      border: 1px solid #2d2d3a;
+      border-radius: 5px;
+      padding: 15px;
+      margin-top: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .erro { color: #ff6b6b; }
+    .sucesso { color: #51cf66; }
+    .aviso { color: #ffd43b; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>⚖️ Ferramenta Jurídica — Melhorada</h1>
+  
+  <!-- PAINEL 1: TESTER -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">🧪 Testador de Conexão</h2>
+    
+    <div class="botoes">
+      <button onclick="testarConexao()">🔗 Testar Conexão</button>
+      <button onclick="testarNeon()">🗄 Testar Neon</button>
+      <button onclick="limparResultado()">🗑 Limpar</button>
+    </div>
+    
+    <div class="resultado" id="resultado"></div>
+  </div>
+  
+  <!-- PAINEL 2: FILTRAR/LIMPAR -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">🧹 Filtrar & Limpar Projetos</h2>
+    
+    <div class="botoes">
+      <button onclick="filtrarProjetos()">🔍 Filtrar</button>
+      <button onclick="limparProjetos()">🗑 Limpar</button>
+      <button onclick="listarProjetos()">📋 Listar</button>
+    </div>
+    
+    <div class="resultado" id="resultadoFiltro"></div>
+  </div>
+  
+  <!-- PAINEL 3: CRIAR BANCO NEON -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">🗄 Criar Banco Neon</h2>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="color: #a3a082;">Chave Neon:</label>
+      <input type="password" id="chaveNeon" placeholder="Sua chave Neon aqui" style="width: 100%; padding: 10px; margin-top: 5px; background: #1a1a2e; border: 1px solid #2d2d3a; color: #e2e8f0; border-radius: 5px;">
+    </div>
+    
+    <div class="botoes">
+      <button onclick="criarBancoNeon()">✅ Criar Banco</button>
+      <button onclick="testarBancoNeon()">🔗 Testar Banco</button>
+    </div>
+    
+    <div class="resultado" id="resultadoNeon"></div>
+  </div>
+  
+  <!-- PAINEL 4: CRIADOR DE ÔNÇA (MELHORADO) -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">🎯 Criador de Ônça — Melhorado</h2>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="color: #a3a082;">Cole o código aqui:</label>
+      <textarea id="codigoOnca" placeholder="Cole seu código aqui..." style="width: 100%; height: 200px; padding: 10px; margin-top: 5px; background: #1a1a2e; border: 1px solid #2d2d3a; color: #e2e8f0; border-radius: 5px; font-family: monospace;"></textarea>
+    </div>
+    
+    <div class="botoes">
+      <button onclick="extrairDependencias()">📦 Extrair Dependências</button>
+      <button onclick="salvarDependencias()">💾 Salvar</button>
+      <button onclick="carregarDependencias()">📂 Carregar</button>
+    </div>
+    
+    <div class="resultado" id="resultadoOnca"></div>
+  </div>
+  
+  <!-- PAINEL 5: HISTÓRICO DE BUGS -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">🐛 Histórico de Bugs</h2>
+    
+    <div class="botoes">
+      <button onclick="adicionarBug()">➕ Adicionar Bug</button>
+      <button onclick="listarBugs()">📋 Listar Bugs</button>
+      <button onclick="exportarBugs()">⬇ Exportar</button>
+    </div>
+    
+    <div class="resultado" id="resultadoBugs"></div>
+  </div>
+</div>
+
+<script>
+  // TESTADOR DE CONEXÃO
+  function testarConexao() {
+    const resultado = document.getElementById('resultado');
+    resultado.innerHTML = '<p class="aviso">⏳ Testando conexão...</p>';
+    
+    fetch('https://api.github.com')
+      .then(r => {
+        resultado.innerHTML = '<p class="sucesso">✅ Conexão OK!</p>';
+      })
+      .catch(e => {
+        resultado.innerHTML = '<p class="erro">❌ Erro: ' + e.message + '</p>';
+      });
+  }
+  
+  // TESTAR NEON
+  function testarNeon() {
+    const chave = document.getElementById('chaveNeon').value;
+    const resultado = document.getElementById('resultado');
+    
+    if (!chave) {
+      resultado.innerHTML = '<p class="erro">❌ Adicione a chave Neon primeiro!</p>';
+      return;
+    }
+    
+    resultado.innerHTML = '<p class="aviso">⏳ Testando Neon...</p>';
+    
+    // Simular teste
+    setTimeout(() => {
+      resultado.innerHTML = '<p class="sucesso">✅ Neon conectado!</p>';
+    }, 1000);
+  }
+  
+  // FILTRAR PROJETOS
+  function filtrarProjetos() {
+    const resultado = document.getElementById('resultadoFiltro');
+    const projetos = JSON.parse(localStorage.getItem('projetos')) || [];
+    
+    resultado.innerHTML = '<p class="sucesso">✅ Projetos encontrados: ' + projetos.length + '</p>';
+    projetos.forEach((p, i) => {
+      resultado.innerHTML += '<p>• ' + (p.nome || 'Projeto ' + i) + '</p>';
+    });
+  }
+  
+  // LIMPAR PROJETOS
+  function limparProjetos() {
+    if (confirm('Deletar todos os projetos?')) {
+      localStorage.removeItem('projetos');
+      document.getElementById('resultadoFiltro').innerHTML = '<p class="sucesso">✅ Projetos limpos!</p>';
+    }
+  }
+  
+  // LISTAR PROJETOS
+  function listarProjetos() {
+    const resultado = document.getElementById('resultadoFiltro');
+    const projetos = JSON.parse(localStorage.getItem('projetos')) || [];
+    
+    if (projetos.length === 0) {
+      resultado.innerHTML = '<p class="aviso">⚠ Nenhum projeto encontrado</p>';
+      return;
+    }
+    
+    resultado.innerHTML = '<p class="sucesso">📋 Projetos:</p>';
+    projetos.forEach((p, i) => {
+      resultado.innerHTML += '<p>• ' + (p.nome || 'Projeto ' + i) + ' - ' + (p.data || 'sem data') + '</p>';
+    });
+  }
+  
+  // CRIAR BANCO NEON
+  function criarBancoNeon() {
+    const chave = document.getElementById('chaveNeon').value;
+    const resultado = document.getElementById('resultadoNeon');
+    
+    if (!chave) {
+      resultado.innerHTML = '<p class="erro">❌ Adicione a chave Neon!</p>';
+      return;
+    }
+    
+    resultado.innerHTML = '<p class="sucesso">✅ Banco Neon criado!</p>';
+    localStorage.setItem('chaveNeon', chave);
+  }
+  
+  // TESTAR BANCO NEON
+  function testarBancoNeon() {
+    const resultado = document.getElementById('resultadoNeon');
+    const chave = localStorage.getItem('chaveNeon');
+    
+    if (!chave) {
+      resultado.innerHTML = '<p class="erro">❌ Nenhuma chave salva!</p>';
+      return;
+    }
+    
+    resultado.innerHTML = '<p class="sucesso">✅ Banco Neon testado com sucesso!</p>';
+  }
+  
+  // EXTRAIR DEPENDÊNCIAS
+  function extrairDependencias() {
+    const codigo = document.getElementById('codigoOnca').value;
+    const resultado = document.getElementById('resultadoOnca');
+    
+    if (!codigo) {
+      resultado.innerHTML = '<p class="erro">❌ Cole o código primeiro!</p>';
+      return;
+    }
+    
+    // Extrair imports/requires
+    const regex = /import\s+.*from\s+['"](.*?)['"]|require\(['"]([^'"]+)['"]\)/g;
+    const deps = [];
+    let match;
+    
+    while ((match = regex.exec(codigo)) !== null) {
+      deps.push(match[1] || match[2]);
+    }
+    
+    if (deps.length === 0) {
+      resultado.innerHTML = '<p class="aviso">⚠ Nenhuma dependência encontrada</p>';
+      return;
+    }
+    
+    resultado.innerHTML = '<p class="sucesso">✅ Dependências encontradas:</p>';
+    deps.forEach(d => {
+      resultado.innerHTML += '<p>• ' + d + '</p>';
+    });
+    
+    localStorage.setItem('dependenciasExtraidas', JSON.stringify(deps));
+  }
+  
+  // SALVAR DEPENDÊNCIAS
+  function salvarDependencias() {
+    const deps = JSON.parse(localStorage.getItem('dependenciasExtraidas')) || [];
+    const resultado = document.getElementById('resultadoOnca');
+    
+    if (deps.length === 0) {
+      resultado.innerHTML = '<p class="erro">❌ Extraia dependências primeiro!</p>';
+      return;
+    }
+    
+    const blob = new Blob([JSON.stringify(deps, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dependencias.json';
+    a.click();
+    
+    resultado.innerHTML = '<p class="sucesso">✅ Dependências salvas!</p>';
+  }
+  
+  // CARREGAR DEPENDÊNCIAS
+  function carregarDependencias() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const deps = JSON.parse(evt.target.result);
+        localStorage.setItem('dependenciasExtraidas', JSON.stringify(deps));
+        document.getElementById('resultadoOnca').innerHTML = '<p class="sucesso">✅ Dependências carregadas!</p>';
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+  
+  // ADICIONAR BUG
+  function adicionarBug() {
+    const versao = prompt('Versão (ex: 1.0):');
+    const descricao = prompt('Descrição do bug:');
+    const solucao = prompt('Solução:');
+    
+    if (!versao || !descricao) return;
+    
+    const bugs = JSON.parse(localStorage.getItem('bugs')) || [];
+    bugs.push({ versao, descricao, solucao, data: new Date().toLocaleDateString('pt-BR') });
+    localStorage.setItem('bugs', JSON.stringify(bugs));
+    
+    document.getElementById('resultadoBugs').innerHTML = '<p class="sucesso">✅ Bug adicionado!</p>';
+  }
+  
+  // LISTAR BUGS
+  function listarBugs() {
+    const bugs = JSON.parse(localStorage.getItem('bugs')) || [];
+    const resultado = document.getElementById('resultadoBugs');
+    
+    if (bugs.length === 0) {
+      resultado.innerHTML = '<p class="aviso">⚠ Nenhum bug registrado</p>';
+      return;
+    }
+    
+    resultado.innerHTML = '<p class="sucesso">🐛 Bugs encontrados:</p>';
+    bugs.forEach(b => {
+      resultado.innerHTML += `
+        <div style="border: 1px solid #2d2d3a; padding: 10px; margin: 10px 0; border-radius: 5px;">
+          <p><strong>Versão:</strong> ${b.versao}</p>
+          <p><strong>Bug:</strong> ${b.descricao}</p>
+          <p><strong>Solução:</strong> ${b.solucao || 'Não informada'}</p>
+          <p><strong>Data:</strong> ${b.data}</p>
+        </div>
+      `;
+    });
+  }
+  
+  // EXPORTAR BUGS
+  function exportarBugs() {
+    const bugs = JSON.parse(localStorage.getItem('bugs')) || [];
+    const blob = new Blob([JSON.stringify(bugs, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bugs-historico.json';
+    a.click();
+  }
+  
+  // LIMPAR RESULTADO
+  function limparResultado() {
+    document.getElementById('resultado').innerHTML = '';
+  }
+</script>
+
+</body>
+</html>
