@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💬 Ollama Chat</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 85vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      text-align: center;
+      border-bottom: 3px solid #5568d3;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 8px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    
+    .status.conectado {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .status.desconectado {
+      background: #f44336;
+      color: white;
+    }
+    
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: #f9f9f9;
+    }
+    
+    .mensagem {
+      display: flex;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .mensagem.usuario {
+      justify-content: flex-end;
+    }
+    
+    .msg-conteudo {
+      max-width: 75%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      word-wrap: break-word;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    
+    .usuario .msg-conteudo {
+      background: #667eea;
+      color: white;
+      border-radius: 18px 0 18px 18px;
+      box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+    }
+    
+    .ia .msg-conteudo {
+      background: white;
+      color: #333;
+      border: 1px solid #e0e0e0;
+      border-radius: 0 18px 18px 18px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .input-area {
+      border-top: 2px solid #e0e0e0;
+      padding: 20px;
+      display: flex;
+      gap: 12px;
+      background: white;
+    }
+    
+    input {
+      flex: 1;
+      padding: 14px 18px;
+      border: 2px solid #ddd;
+      border-radius: 25px;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 8px rgba(102, 126, 234, 0.2);
+    }
+    
+    button {
+      padding: 14px 28px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #764ba2;
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: scale(1);
+    }
+    
+    .info {
+      background: #f0f4ff;
+      border-top: 2px solid #e0e0e0;
+      padding: 18px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+    }
+    
+    .info strong {
+      color: #667eea;
+    }
+    
+    .loading {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #667eea;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+    
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .erro {
+      background: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 4px solid #c62828;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>💬 Chat Ollama</h1>
+    <p style="font-size: 13px; margin-top: 5px; opacity: 0.9;">Inteligência Artificial Local - Sem Custos</p>
+    <div class="status" id="status">🔴 Desconectado</div>
+  </div>
+  
+  <div class="chat" id="chat">
+    <div class="mensagem ia">
+      <div class="msg-conteudo">
+        👋 Olá! Sou o Ollama. Clique em <strong>"Conectar"</strong> para começar a conversar comigo. Funciono localmente no seu computador, sem custos e sem enviar dados para a nuvem!
+      </div>
+    </div>
+  </div>
+  
+  <div class="input-area">
+    <input 
+      type="text" 
+      id="entrada" 
+      placeholder="Digite sua pergunta aqui..." 
+      onkeypress="if(event.key==='Enter') enviar()"
+    >
+    <button onclick="conectar()" id="btnConectar">🔗 Conectar</button>
+    <button onclick="enviar()" id="btnEnviar" disabled>📤 Enviar</button>
+  </div>
+  
+  <div class="info">
+    <strong>ℹ️ Como funciona:</strong><br>
+    1. Certifique-se de que o Ollama está rodando no terminal com: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">ollama serve</code><br>
+    2. Clique em "Conectar" para estabelecer a conexão<br>
+    3. Digite sua pergunta e clique em "Enviar"<br>
+    4. A IA responde localmente, sem enviar dados para a nuvem!
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:11434/api/generate';
+  let conectado = false;
+  let modelo = 'llama2';
+  
+  async function conectar() {
+    const status = document.getElementById('status');
+    const btn = document.getElementById('btnConectar');
+    const entrada = document.getElementById('entrada');
+    
+    status.textContent = '⏳ Testando conexão...';
+    btn.disabled = true;
+    
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelo,
+          prompt: 'teste',
+          stream: false
+        })
+      });
+      
+      if (res.ok) {
+        status.textContent = '🟢 Conectado!';
+        status.className = 'status conectado';
+        conectado = true;
+        btn.textContent = '✅ Conectado';
+        document.getElementById('btnEnviar').disabled = false;
+        entrada.focus();
+        entrada.placeholder = 'Digite sua pergunta e pressione Enter...';
+      } else {
+        throw new Error('Erro na resposta');
+      }
+    } catch (e) {
+      status.textContent = '🔴 Desconectado';
+      status.className = 'status desconectado';
+      conectado = false;
+      btn.disabled = false;
+      btn.textContent = '🔗 Conectar';
+      
+      adicionarMensagem(
+        '❌ <strong>Erro ao conectar!</strong><br><br>' +
+        'Certifique-se de que:<br>' +
+        '1. O Ollama está instalado<br>' +
+        '2. O terminal está aberto com: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">ollama serve</code><br>' +
+        '3. Aparece: "listening on 127.0.0.1:11434"<br><br>' +
+        'Depois clique em "Conectar" novamente.',
+        'ia'
+      );
+    }
+  }
+  
+  async function enviar() {
+    if (!conectado) {
+      alert('⚠️ Clique em "Conectar" primeiro!');
+      return;
+    }
+    
+    const entrada = document.getElementById('entrada');
+    const texto = entrada.value.trim();
+    
+    if (!texto) return;
+    
+    // Adicionar mensagem do usuário
+    adicionarMensagem(texto, 'usuario');
+    entrada.value = '';
+    
+    // Mostrar digitando
+    const chat = document.getElementById('chat');
+    const digitando = document.createElement('div');
+    digitando.className = 'mensagem ia';
+    digitando.id = 'digitando';
+    digitando.innerHTML = `
+      <div class="msg-conteudo">
+        <div class="loading">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+    `;
+    chat.appendChild(digitando);
+    chat.scrollTop = chat.scrollHeight;
+    
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelo,
+          prompt: texto,
+          stream: false
+        })
+      });
+      
+      if (!res.ok) throw new Error('Erro na resposta');
+      
+      const data = await res.json();
+      const resposta = data.response;
+      
+      const el = document.getElementById('digitando');
+      if (el) el.remove();
+      
+      adicionarMensagem(resposta, 'ia');
+      
+    } catch (e) {
+      const el = document.getElementById('digitando');
+      if (el) el.remove();
+      adicionarMensagem('❌ Erro: ' + e.message, 'ia');
+    }
+  }
+  
+  function adicionarMensagem(texto, tipo) {
+    const chat = document.getElementById('chat');
+    const div = document.createElement('div');
+    div.className = 'mensagem ' + tipo;
+    div.innerHTML = `<div class="msg-conteudo">${texto}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  
+  // Auto-conectar ao carregar
+  window.addEventListener('load', () => {
+    setTimeout(conectar, 500);
+  });
+</script>
+
+</body>
+</html>
