@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>🤖 Ollama — Interface Gráfica</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+      color: #e2e8f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 { 
+      color: #a3a082; 
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 8px 15px;
+      background: #1a1a2e;
+      border: 1px solid #2d2d3a;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #ffd43b;
+    }
+    
+    .status.conectado {
+      color: #51cf66;
+      border-color: #51cf66;
+    }
+    
+    .status.desconectado {
+      color: #ff6b6b;
+      border-color: #ff6b6b;
+    }
+    
+    .chat-container {
+      background: #12121a;
+      border: 1px solid #2d2d3a;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .mensagem {
+      display: flex;
+      gap: 10px;
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .mensagem.usuario {
+      justify-content: flex-end;
+    }
+    
+    .mensagem-conteudo {
+      max-width: 70%;
+      padding: 12px 15px;
+      border-radius: 10px;
+      word-wrap: break-word;
+    }
+    
+    .usuario .mensagem-conteudo {
+      background: #a3a082;
+      color: #000;
+      border-radius: 15px 0 15px 15px;
+    }
+    
+    .ia .mensagem-conteudo {
+      background: #1a1a2e;
+      color: #e2e8f0;
+      border: 1px solid #2d2d3a;
+      border-radius: 0 15px 15px 15px;
+    }
+    
+    .chat-input {
+      border-top: 1px solid #2d2d3a;
+      padding: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    input {
+      flex: 1;
+      padding: 12px 15px;
+      background: #1e1e1e;
+      border: 1px solid #2d2d3a;
+      border-radius: 20px;
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #a3a082;
+    }
+    
+    button {
+      padding: 12px 25px;
+      background: #a3a082;
+      border: none;
+      border-radius: 20px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: #b8b89a;
+      transform: scale(1.05);
+    }
+    
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: scale(1);
+    }
+    
+    .controles {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-secundario {
+      padding: 10px 15px;
+      background: #1a1a2e;
+      border: 1px solid #2d2d3a;
+      color: #a3a082;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .btn-secundario:hover {
+      background: #2d2d3a;
+    }
+    
+    .info {
+      background: #1a1a2e;
+      border: 1px solid #2d2d3a;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .typing {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    
+    .typing span {
+      width: 8px;
+      height: 8px;
+      background: #a3a082;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite;
+    }
+    
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🤖 Ollama — Interface Gráfica</h1>
+    <div class="status" id="status">🔴 Desconectado</div>
+  </div>
+  
+  <div class="chat-container">
+    <div class="chat-messages" id="mensagens">
+      <div class="mensagem ia">
+        <div class="mensagem-conteudo">
+          Olá! Sou o Ollama. Funciono localmente no seu computador, sem pagar e sem internet. Como posso ajudar?
+        </div>
+      </div>
+    </div>
+    
+    <div class="chat-input">
+      <input 
+        type="text" 
+        id="entrada" 
+        placeholder="Digite sua pergunta aqui..." 
+        onkeypress="if(event.key==='Enter') enviarMensagem()"
+      >
+      <button onclick="enviarMensagem()" id="btnEnviar">Enviar</button>
+    </div>
+  </div>
+  
+  <div class="controles">
+    <button class="btn-secundario" onclick="testarConexao()">🔗 Testar Conexão</button>
+    <button class="btn-secundario" onclick="limparChat()">🗑 Limpar Chat</button>
+    <button class="btn-secundario" onclick="exportarChat()">⬇ Exportar</button>
+    <button class="btn-secundario" onclick="mudarModelo()">🤖 Mudar Modelo</button>
+  </div>
+  
+  <div class="info">
+    <p><strong>ℹ️ Como funciona:</strong></p>
+    <p>1. Certifique-se de que o Ollama está rodando no terminal (ollama serve)</p>
+    <p>2. Digite sua pergunta e clique em "Enviar"</p>
+    <p>3. A IA responde localmente, sem enviar dados para a nuvem</p>
+    <p>4. Funciona offline, sem custos!</p>
+  </div>
+</div>
+
+<script>
+  const API_URL = 'http://localhost:11434/api/generate';
+  let modelo = 'llama2';
+  let conectado = false;
+  
+  // TESTAR CONEXÃO
+  async function testarConexao() {
+    const status = document.getElementById('status');
+    status.textContent = '⏳ Testando...';
+    
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelo,
+          prompt: 'teste',
+          stream: false
+        })
+      });
+      
+      if (response.ok) {
+        status.textContent = '🟢 Conectado';
+        status.className = 'status conectado';
+        conectado = true;
+      } else {
+        throw new Error('Erro na resposta');
+      }
+    } catch (e) {
+      status.textContent = '🔴 Desconectado';
+      status.className = 'status desconectado';
+      conectado = false;
+      alert('❌ Ollama não está rodando!\n\nAbra o terminal e digite:\nollama serve');
+    }
+  }
+  
+  // ENVIAR MENSAGEM
+  async function enviarMensagem() {
+    const entrada = document.getElementById('entrada');
+    const mensagem = entrada.value.trim();
+    
+    if (!mensagem) return;
+    
+    if (!conectado) {
+      alert('⚠️ Ollama não está conectado!\nClique em "Testar Conexão" primeiro.');
+      return;
+    }
+    
+    // Adicionar mensagem do usuário
+    adicionarMensagem(mensagem, 'usuario');
+    entrada.value = '';
+    
+    // Mostrar digitando
+    const mensagensDiv = document.getElementById('mensagens');
+    const digitando = document.createElement('div');
+    digitando.className = 'mensagem ia';
+    digitando.innerHTML = '<div class="mensagem-conteudo"><div class="typing"><span></span><span></span><span></span></div></div>';
+    digitando.id = 'digitando';
+    mensagensDiv.appendChild(mensagensDiv);
+    mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
+    
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: modelo,
+          prompt: mensagem,
+          stream: false
+        })
+      });
+      
+      if (!response.ok) throw new Error('Erro na resposta');
+      
+      const data = await response.json();
+      const resposta = data.response;
+      
+      // Remover digitando
+      const el = document.getElementById('digitando');
+      if (el) el.remove();
+      
+      // Adicionar resposta
+      adicionarMensagem(resposta, 'ia');
+      
+    } catch (e) {
+      const el = document.getElementById('digitando');
+      if (el) el.remove();
+      adicionarMensagem('❌ Erro: ' + e.message, 'ia');
+    }
+  }
+  
+  // ADICIONAR MENSAGEM
+  function adicionarMensagem(texto, tipo) {
+    const mensagensDiv = document.getElementById('mensagens');
+    const div = document.createElement('div');
+    div.className = 'mensagem ' + tipo;
+    div.innerHTML = '<div class="mensagem-conteudo">' + texto + '</div>';
+    mensagensDiv.appendChild(div);
+    mensagensDiv.scrollTop = mensagensDiv.scrollHeight;
+  }
+  
+  // LIMPAR CHAT
+  function limparChat() {
+    if (confirm('Limpar todo o chat?')) {
+      document.getElementById('mensagens').innerHTML = `
+        <div class="mensagem ia">
+          <div class="mensagem-conteudo">Chat limpo! Como posso ajudar?</div>
+        </div>
+      `;
+    }
+  }
+  
+  // EXPORTAR CHAT
+  function exportarChat() {
+    const mensagens = document.querySelectorAll('.mensagem');
+    let texto = 'HISTÓRICO DO CHAT\n' + '='.repeat(50) + '\n\n';
+    
+    mensagens.forEach(msg => {
+      const tipo = msg.classList.contains('usuario') ? 'VOCÊ' : 'OLLAMA';
+      const conteudo = msg.querySelector('.mensagem-conteudo').textContent;
+      texto += tipo + ':\n' + conteudo + '\n\n';
+    });
+    
+    const blob = new Blob([texto], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'chat-ollama.txt';
+    a.click();
+  }
+  
+  // MUDAR MODELO
+  function mudarModelo() {
+    const novo = prompt('Qual modelo? (padrão: llama2)\nOpções: llama2, neural-chat, mistral, etc.');
+    if (novo) {
+      modelo = novo;
+      alert('✅ Modelo alterado para: ' + novo);
+    }
+  }
+  
+  // INICIALIZAR
+  testarConexao();
+</script>
+
+</body>
+</html>
