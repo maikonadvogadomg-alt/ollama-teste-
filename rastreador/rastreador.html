@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>🎬 Rastreador de Código — Inventário</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #0a0a0f; 
+      color: #e2e8f0;
+      padding: 20px;
+    }
+    
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    h1 { color: #a3a082; margin-bottom: 20px; }
+    
+    .painel {
+      background: #12121a;
+      border: 1px solid #2d2d3a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .botoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+    
+    button { 
+      padding: 10px 15px; 
+      border: 1px solid #a3a082; 
+      background: #1a1a2e; 
+      color: #a3a082; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-weight: bold;
+    }
+    
+    button:hover { background: #a3a082; color: #000; }
+    
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border: 1px solid #2d2d3a;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    
+    .timeline {
+      border-left: 3px solid #a3a082;
+      padding-left: 20px;
+      margin-top: 20px;
+    }
+    
+    .passo {
+      background: #1a1a2e;
+      border: 1px solid #2d2d3a;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+    }
+    
+    .passo::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 20px;
+      width: 12px;
+      height: 12px;
+      background: #a3a082;
+      border-radius: 50%;
+      border: 3px solid #0a0a0f;
+    }
+    
+    .passo-numero {
+      color: #a3a082;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .passo-titulo {
+      color: #e2e8f0;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .passo-codigo {
+      background: #0a0a0f;
+      border: 1px solid #2d2d3a;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #51cf66;
+      margin-bottom: 10px;
+      overflow-x: auto;
+    }
+    
+    .passo-nota {
+      color: #ffd43b;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    
+    .resumo {
+      background: #1a1a2e;
+      border-left: 4px solid #a3a082;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
+    
+    .input-grupo {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      color: #a3a082;
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    input, textarea {
+      width: 100%;
+    }
+    
+    input {
+      padding: 8px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border: 1px solid #2d2d3a;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎬 Rastreador de Código — Inventário Passo a Passo</h1>
+  <p style="color: #888; margin-bottom: 20px;">Rastreie cada mudança como um ladrão rastreando pistas! 🔍</p>
+  
+  <!-- PAINEL 1: ADICIONAR PASSO -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">➕ Adicionar Passo</h2>
+    
+    <div class="input-grupo">
+      <label>📌 Título do Passo:</label>
+      <input type="text" id="tituloPasso" placeholder="Ex: Consertou tela azul">
+    </div>
+    
+    <div class="input-grupo">
+      <label>📍 Localização (arquivo/linha):</label>
+      <input type="text" id="localizacao" placeholder="Ex: app.js linha 45">
+    </div>
+    
+    <div class="input-grupo">
+      <label>🔴 Código ANTES (bugado):</label>
+      <textarea id="codigoAntes" placeholder="Cole o código que estava bugado..."></textarea>
+    </div>
+    
+    <div class="input-grupo">
+      <label>🟢 Código DEPOIS (consertado):</label>
+      <textarea id="codigoDepois" placeholder="Cole o código que foi consertado..."></textarea>
+    </div>
+    
+    <div class="input-grupo">
+      <label>💡 O que mudou? (explicação):</label>
+      <textarea id="explicacao" placeholder="Explique o que foi mudado e por quê..." style="height: 100px;"></textarea>
+    </div>
+    
+    <div class="input-grupo">
+      <label>🏷 Tags (separadas por vírgula):</label>
+      <input type="text" id="tags" placeholder="Ex: persistência, tela azul, importação">
+    </div>
+    
+    <div class="botoes">
+      <button onclick="adicionarPasso()">✅ Adicionar Passo</button>
+      <button onclick="limparFormulario()">🗑 Limpar</button>
+    </div>
+  </div>
+  
+  <!-- PAINEL 2: TIMELINE -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">🎬 Timeline — Rastreamento</h2>
+    
+    <div class="botoes">
+      <button onclick="listarPassos()">📋 Listar Tudo</button>
+      <button onclick="exportarInventario()">⬇ Exportar Inventário</button>
+      <button onclick="gerarRelatorio()">📊 Gerar Relatório</button>
+      <button onclick="limparTudo()">🗑 Limpar Tudo</button>
+    </div>
+    
+    <div class="timeline" id="timeline"></div>
+  </div>
+  
+  <!-- PAINEL 3: RESUMO FINAL -->
+  <div class="painel">
+    <h2 style="color: #a3a082; margin-bottom: 15px;">📊 Resumo Final</h2>
+    <div id="resumoFinal" class="resumo"></div>
+  </div>
+</div>
+
+<script>
+  // DADOS LOCAIS
+  let passos = JSON.parse(localStorage.getItem('rastreador_passos')) || [];
+  
+  // ADICIONAR PASSO
+  function adicionarPasso() {
+    const titulo = document.getElementById('tituloPasso').value;
+    const localizacao = document.getElementById('localizacao').value;
+    const codigoAntes = document.getElementById('codigoAntes').value;
+    const codigoDepois = document.getElementById('codigoDepois').value;
+    const explicacao = document.getElementById('explicacao').value;
+    const tags = document.getElementById('tags').value;
+    
+    if (!titulo || !codigoAntes || !codigoDepois) {
+      alert('❌ Preencha título, código antes e depois!');
+      return;
+    }
+    
+    const passo = {
+      id: Date.now(),
+      numero: passos.length + 1,
+      titulo,
+      localizacao,
+      codigoAntes,
+      codigoDepois,
+      explicacao,
+      tags: tags.split(',').map(t => t.trim()),
+      data: new Date().toLocaleString('pt-BR'),
+      hora: new Date().toLocaleTimeString('pt-BR')
+    };
+    
+    passos.push(passo);
+    localStorage.setItem('rastreador_passos', JSON.stringify(passos));
+    
+    alert('✅ Passo adicionado!');
+    limparFormulario();
+    listarPassos();
+  }
+  
+  // LISTAR PASSOS
+  function listarPassos() {
+    const timeline = document.getElementById('timeline');
+    timeline.innerHTML = '';
+    
+    if (passos.length === 0) {
+      timeline.innerHTML = '<p style="color: #888;">Nenhum passo registrado. Comece a rastrear!</p>';
+      atualizarResumo();
+      return;
+    }
+    
+    passos.forEach((p, idx) => {
+      const html = `
+        <div class="passo">
+          <div class="passo-numero">🎬 Passo ${p.numero}</div>
+          <div class="passo-titulo">${p.titulo}</div>
+          
+          ${p.localizacao ? `<div style="color: #888; font-size: 12px;">📍 ${p.localizacao}</div>` : ''}
+          
+          <div style="margin-top: 10px;">
+            <strong style="color: #ff6b6b;">🔴 ANTES (Bugado):</strong>
+            <div class="passo-codigo">${p.codigoAntes}</div>
+          </div>
+          
+          <div style="margin-top: 10px;">
+            <strong style="color: #51cf66;">🟢 DEPOIS (Consertado):</strong>
+            <div class="passo-codigo">${p.codigoDepois}</div>
+          </div>
+          
+          ${p.explicacao ? `
+            <div style="margin-top: 10px; background: #1e1e1e; padding: 10px; border-radius: 5px; border-left: 3px solid #ffd43b;">
+              <strong style="color: #ffd43b;">💡 O que mudou:</strong>
+              <p style="margin-top: 5px; color: #d4d4d4;">${p.explicacao}</p>
+            </div>
+          ` : ''}
+          
+          ${p.tags.length > 0 ? `
+            <div style="margin-top: 10px;">
+              <strong style="color: #a3a082;">🏷 Tags:</strong>
+              <div style="margin-top: 5px;">
+                ${p.tags.map(t => `<span style="background: #2d2d3a; padding: 3px 8px; border-radius: 3px; margin-right: 5px; display: inline-block; font-size: 12px;">${t}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <div style="margin-top: 10px; color: #888; font-size: 11px;">
+            📅 ${p.data} | ⏰ ${p.hora}
+          </div>
+          
+          <button onclick="deletarPasso(${p.id})" style="margin-top: 10px; background: #dc2626; border-color: #dc2626; color: white;">🗑 Deletar</button>
+        </div>
+      `;
+      timeline.innerHTML += html;
+    });
+    
+    atualizarResumo();
+  }
+  
+  // DELETAR PASSO
+  function deletarPasso(id) {
+    if (confirm('Deletar este passo?')) {
+      passos = passos.filter(p => p.id !== id);
+      localStorage.setItem('rastreador_passos', JSON.stringify(passos));
+      listarPassos();
+    }
+  }
+  
+  // ATUALIZAR RESUMO
+  function atualizarResumo() {
+    const resumo = document.getElementById('resumoFinal');
+    
+    if (passos.length === 0) {
+      resumo.innerHTML = '<p style="color: #888;">Nenhum passo registrado ainda.</p>';
+      return;
+    }
+    
+    // Contar tags
+    const tagsContagem = {};
+    passos.forEach(p => {
+      p.tags.forEach(t => {
+        tagsContagem[t] = (tagsContagem[t] || 0) + 1;
+      });
+    });
+    
+    let html = `
+      <p><strong>📊 Total de Passos:</strong> ${passos.length}</p>
+      <p><strong>📅 Primeiro Passo:</strong> ${passos[0].data}</p>
+      <p><strong>📅 Último Passo:</strong> ${passos[passos.length - 1].data}</p>
+    `;
+    
+    if (Object.keys(tagsContagem).length > 0) {
+      html += '<p><strong>🏷 Problemas Encontrados:</strong></p><ul>';
+      Object.entries(tagsContagem).forEach(([tag, count]) => {
+        html += `<li>${tag}: ${count} ocorrência(s)</li>`;
+      });
+      html += '</ul>';
+    }
+    
+    resumo.innerHTML = html;
+  }
+  
+  // EXPORTAR INVENTÁRIO
+  function exportarInventario() {
+    const blob = new Blob([JSON.stringify(passos, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rastreador-inventario.json';
+    a.click();
+    alert('✅ Inventário exportado!');
+  }
+  
+  // GERAR RELATÓRIO
+  function gerarRelatorio() {
+    if (passos.length === 0) {
+      alert('❌ Nenhum passo para gerar relatório!');
+      return;
+    }
+    
+    let relatorio = '🎬 RELATÓRIO DE RASTREAMENTO\n';
+    relatorio += '=' .repeat(50) + '\n\n';
+    
+    passos.forEach((p, idx) => {
+      relatorio += `PASSO ${p.numero}: ${p.titulo}\n`;
+      relatorio += '-'.repeat(50) + '\n';
+      relatorio += `Localização: ${p.localizacao || 'Não informada'}\n`;
+      relatorio += `Data: ${p.data}\n`;
+      relatorio += `\nCÓDIGO ANTES:\n${p.codigoAntes}\n`;
+      relatorio += `\nCÓDIGO DEPOIS:\n${p.codigoDepois}\n`;
+      relatorio += `\nO QUE MUDOU:\n${p.explicacao || 'Não informado'}\n`;
+      relatorio += `\nTAGS: ${p.tags.join(', ') || 'Nenhuma'}\n`;
+      relatorio += '\n' + '='.repeat(50) + '\n\n';
+    });
+    
+    const blob = new Blob([relatorio], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'relatorio-rastreamento.txt';
+    a.click();
+    alert('✅ Relatório gerado!');
+  }
+  
+  // LIMPAR FORMULÁRIO
+  function limparFormulario() {
+    document.getElementById('tituloPasso').value = '';
+    document.getElementById('localizacao').value = '';
+    document.getElementById('codigoAntes').value = '';
+    document.getElementById('codigoDepois').value = '';
+    document.getElementById('explicacao').value = '';
+    document.getElementById('tags').value = '';
+  }
+  
+  // LIMPAR TUDO
+  function limparTudo() {
+    if (confirm('Deletar TODOS os passos? Isso não pode ser desfeito!')) {
+      passos = [];
+      localStorage.removeItem('rastreador_passos');
+      listarPassos();
+      alert('✅ Tudo limpo!');
+    }
+  }
+  
+  // INICIALIZAR
+  listarPassos();
+</script>
+
+</body>
+</html>
